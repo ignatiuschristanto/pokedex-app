@@ -1,16 +1,21 @@
 import { useEffect, useState } from "react";
-import { POKEMON_SPRITES_URL, POKEMON_URL} from "../utility/config";
+import { POKEMON_SPRITES_URL, POKEMON_URL, POKEMON_TYPE } from "../utility/config";
 import axios from "axios";
 
 const usePokemon = () => {
     const [pokemon, setPokemon] = useState([]);
     const [nextUrl, setNextUrl] = useState(POKEMON_URL);
     const [haveMorePokemon, setHaveMorePokemon] = useState(true);
-    const [pokemonType, setPokemonType] = useState();
+    const [selectedPokemonType, setSelectedPokemonType] = useState();
 
-    useEffect(()=>{    
-        getPokemon();    
-    },[]);
+    useEffect(()=>{
+        if(selectedPokemonType){
+            getPokemonByType();
+        }
+        else{   
+            getPokemon();
+        }
+    },[selectedPokemonType]);
 
     useEffect(()=>{
         if(nextUrl === null){
@@ -21,7 +26,6 @@ const usePokemon = () => {
 
     const getPokemonWithSprites = (pokemonData) => {
         let pokemonUrl = new URL(pokemonData.url);
-       
         const pokedexNum = pokemonUrl.pathname.split("/")[4];
         const newPokemonIndex = {
             id: pokedexNum,
@@ -43,10 +47,25 @@ const usePokemon = () => {
         };
     };
 
+    const getPokemonByType = async () => {
+        if(selectedPokemonType){
+            const res = await axios.get(`${selectedPokemonType.url}`);
+            if(res?.data?.pokemon){
+                const pokemonDataByType = res.data.pokemon.map(item => getPokemonWithSprites(item.pokemon));
+                setPokemon(pokemonDataByType);
+                setNextUrl(POKEMON_URL);
+            };
+        }
+    }
+
     return {
         pokemon,
+        setPokemon,
         getNextPokemon: getPokemon,
         haveMorePokemon,
+        selectedPokemonType,
+        setSelectedPokemonType,
+        pokemonTypeList: POKEMON_TYPE
     };
 
 };
